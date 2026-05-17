@@ -46,6 +46,9 @@ body {
 /* Input area */
 .input-container {
   display: flex;
+  align-items: center;
+  height: 60px;
+  /* padding: 10px; */
   border-top: 1px solid #ddd;
 }
 
@@ -53,17 +56,22 @@ body {
 input {
   flex: 1;
   padding: 10px;
+  font-size: 14px;
   border: none;
   outline: none;
 }
 
 /* Button */
 button {
-  padding: 10px 15px;
+  margin-right: 10px;
+  padding: 0 20px;
+  height: 40px;
   border: none;
   background: #4a90e2;
   color: white;
   cursor: pointer;
+  font-size: 15px;
+  border-radius: 6px;
 }
 
 /* Button hover */
