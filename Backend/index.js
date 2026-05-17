@@ -7,7 +7,7 @@ const PORT = 3003;
 app.use(cors());
 app.use(express.json());
 
-// In-memory storage (temporary)
+// In-memory storage
 let messages = [{ id: 1, text: "Welcome to the chat!", timestamp: Date.now() }];
 
 // GET all messages
