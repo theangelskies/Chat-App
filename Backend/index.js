@@ -11,34 +11,24 @@ const io = new Server(server, {
 });
 
 let messages = [];
-app.get("/messages", (req, res) => {
-  res.json(messages);
-});
+io.on("connection", (socket) => {
+  console.log("User connected");
 
-app.post("/messages", (req, res) => {
-  const { text, username } = req.body;
+  socket.emit("init", messages);
 
-  if (!text || !text.trim()) {
-    return res.status(400).json({ error: "Message text is required" });
-  }
+  socket.on("sendMessage", ({ text, username }) => {
+    if (!text?.trim() || !username?.trim()) return;
 
-  if (!username || !username.trim()) {
-    return res.status(400).json({ error: "Username is required" });
-  }
+    const newMessage = {
+      id: Date.now(),
+      text: text.trim(),
+      username: username.trim(),
+      timestamp: Date.now(),
+      likes: 0,
+      dislikes: 0,
+    };
 
-  const newMessage = {
-    id: Date.now(),
-    text: text.trim(),
-    username: username.trim(),
-    timestamp: Date.now(),
-    likes: 0,
-    dislikes: 0,
-  };
-
-  messages.push(newMessage);
-
-  res.status(201).json(newMessage);
-});
+    messages.push(newMessage);},
 
 app.post("/messages/:id/like", (req, res) => {
   const message = messages.find((m) => m.id === parseInt(req.params.id));
@@ -49,7 +39,7 @@ app.post("/messages/:id/like", (req, res) => {
 
   message.likes++;
   res.json(message);
-});
+})
 
 app.post("/messages/:id/dislike", (req, res) => {
   const message = messages.find((m) => m.id === parseInt(req.params.id));
