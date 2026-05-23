@@ -1,9 +1,9 @@
-import express from "express";
+import app from "./app.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
+const PORT = 3000;
 const server = createServer(app);
-
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -11,6 +11,7 @@ const io = new Server(server, {
 });
 
 let messages = [];
+
 io.on("connection", (socket) => {
   console.log("User connected");
 
@@ -28,30 +29,32 @@ io.on("connection", (socket) => {
       dislikes: 0,
     };
 
-    messages.push(newMessage);},
+    messages.push(newMessage);
 
-app.post("/messages/:id/like", (req, res) => {
-  const message = messages.find((m) => m.id === parseInt(req.params.id));
+    io.emit("newMessage", newMessage);
+  });
 
-  if (!message) {
-    return res.status(404).json({ error: "Message not found" });
-  }
+  socket.on("like", (id) => {
+    const msg = messages.find((m) => m.id === id);
+    if (!msg) return;
 
-  message.likes++;
-  res.json(message);
-})
+    msg.likes++;
+    io.emit("updateMessage", msg);
+  });
 
-app.post("/messages/:id/dislike", (req, res) => {
-  const message = messages.find((m) => m.id === parseInt(req.params.id));
+  socket.on("dislike", (id) => {
+    const msg = messages.find((m) => m.id === id);
+    if (!msg) return;
 
-  if (!message) {
-    return res.status(404).json({ error: "Message not found" });
-  }
+    msg.dislikes++;
+    io.emit("updateMessage", msg);
+  });
 
-  message.dislikes++;
-  res.json(message);
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
