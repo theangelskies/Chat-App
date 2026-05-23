@@ -2,15 +2,13 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
-const app = express();
-const PORT = 3000;
+const server = createServer(app);
 
-app.use(
-  cors({
+const io = new Server(server, {
+  cors: {
     origin: "*",
-  }),
-);
-app.use(express.json());
+  },
+});
 
 let messages = [];
 app.get("/messages", (req, res) => {
