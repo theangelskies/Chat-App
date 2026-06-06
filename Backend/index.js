@@ -1,9 +1,14 @@
-import app from "./app.js";
+import express from "express";
+import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
-const PORT = 3000;
+const app = express();
+app.use(cors());
+app.use(express.json());
+
 const server = createServer(app);
+
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -20,7 +25,7 @@ io.on("connection", (socket) => {
   socket.on("sendMessage", ({ text, username }) => {
     if (!text?.trim() || !username?.trim()) return;
 
-    const newMessage = {
+    const msg = {
       id: Date.now(),
       text: text.trim(),
       username: username.trim(),
@@ -29,9 +34,8 @@ io.on("connection", (socket) => {
       dislikes: 0,
     };
 
-    messages.push(newMessage);
-
-    io.emit("newMessage", newMessage);
+    messages.push(msg);
+    io.emit("newMessage", msg);
   });
 
   socket.on("like", (id) => {
@@ -55,6 +59,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+server.listen(process.env.PORT || 3000, () => {
+  console.log("Server running");
 });

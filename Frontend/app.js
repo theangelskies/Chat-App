@@ -1,86 +1,60 @@
-const API_URL = "http://qf8xmf8qj273dw9dryowrbtn.178.105.39.91.sslip.io";
+const socket = io("http://localhost:3000");
 
-async function loadMessages() {
-  try {
-    const res = await fetch(`${API_URL}/messages`);
-    const data = await res.json();
+const messagesDiv = document.getElementById("messages");
 
-    const container = document.getElementById("messages");
-    container.innerHTML = "";
+socket.on("init", (messages) => {
+  messagesDiv.innerHTML = "";
+  messages.forEach(renderMessage);
+});
 
-    if (data.length === 0) {
-      container.innerHTML = "<p>No messages yet 👋</p>";
-      return;
-    }
+socket.on("newMessage", (msg) => {
+  renderMessage(msg);
+});
 
-    data.forEach((msg) => {
-      const div = document.createElement("div");
-
-      div.innerHTML = `
-        <strong>${msg.username}</strong><br/>
-        ${msg.text}<br/>
-        <small>${new Date(msg.timestamp).toLocaleTimeString()}</small><br/>
-        <button onclick="react(${msg.id}, 'like')">👍 ${msg.likes}</button>
-        <button onclick="react(${msg.id}, 'dislike')">👎 ${msg.dislikes}</button>
-      `;
-
-      container.appendChild(div);
-    });
-  } catch (err) {
-    console.error("Error loading messages:", err);
+socket.on("updateMessage", (msg) => {
+  const el = document.getElementById(`msg-${msg.id}`);
+  if (el) {
+    el.querySelector(".likes").textContent = msg.likes;
+    el.querySelector(".dislikes").textContent = msg.dislikes;
   }
-}
+});
 
-async function sendMessage() {
-  const input = document.getElementById("messageInput");
-  const usernameInput = document.getElementById("username");
-
-  const text = input.value.trim();
-  const username = usernameInput.value.trim();
+function sendMessage() {
+  const text = document.getElementById("messageInput").value.trim();
+  const username = document.getElementById("username").value.trim();
 
   if (!text || !username) {
     alert("Enter username and message");
     return;
   }
 
-  try {
-    const res = await fetch(`${API_URL}/messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text, username }),
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to send message");
-    }
-
-    input.value = "";
-    loadMessages();
-  } catch (err) {
-    console.error("Error sending message:", err);
-  }
+  socket.emit("sendMessage", { text, username });
+  document.getElementById("messageInput").value = "";
 }
 
-async function react(id, type) {
-  try {
-    await fetch(`${API_URL}/messages/${id}/${type}`, {
-      method: "POST",
-    });
-
-    loadMessages();
-  } catch (err) {
-    console.error("Reaction failed:", err);
-  }
+function react(id, type) {
+  socket.emit(type, id);
 }
 
-document
-  .getElementById("messageInput")
-  .addEventListener("keypress", function (e) {
-    if (e.key === "Enter") {
-      sendMessage();
-    }
-  });
+function renderMessage(msg) {
+  const div = document.createElement("div");
+  div.id = `msg-${msg.id}`;
 
-loadMessages();
+  div.innerHTML = `
+    <strong>${msg.username}</strong><br/>
+    ${msg.text}<br/>
+    <small>${new Date(msg.timestamp).toLocaleTimeString()}</small><br/>
+    <button onclick="react(${msg.id}, 'like')">
+      👍 <span class="likes">${msg.likes}</span>
+    </button>
+    <button onclick="react(${msg.id}, 'dislike')">
+      👎 <span class="dislikes">${msg.dislikes}</span>
+    </button>
+  `;
+
+  messagesDiv.appendChild(div);
+}
+
+document.getElementById("messageInput").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
