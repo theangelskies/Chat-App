@@ -83,6 +83,4 @@ document
     }
   });
 
-setInterval(loadMessages, 3000);
-
 loadMessages();
