@@ -1,68 +1,60 @@
-import express from "express";
-import cors from "cors";
+import app from "./app.js";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
-const app = express();
 const PORT = 3000;
-
-app.use(
-  cors({
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
     origin: "*",
-  }),
-);
-app.use(express.json());
+  },
+});
 
 let messages = [];
-app.get("/messages", (req, res) => {
-  res.json(messages);
+
+io.on("connection", (socket) => {
+  console.log("User connected");
+
+  socket.emit("init", messages);
+
+  socket.on("sendMessage", ({ text, username }) => {
+    if (!text?.trim() || !username?.trim()) return;
+
+    const newMessage = {
+      id: Date.now(),
+      text: text.trim(),
+      username: username.trim(),
+      timestamp: Date.now(),
+      likes: 0,
+      dislikes: 0,
+    };
+
+    messages.push(newMessage);
+
+    io.emit("newMessage", newMessage);
+  });
+
+  socket.on("like", (id) => {
+    const msg = messages.find((m) => m.id === id);
+    if (!msg) return;
+
+    msg.likes++;
+    io.emit("updateMessage", msg);
+  });
+
+  socket.on("dislike", (id) => {
+    const msg = messages.find((m) => m.id === id);
+    if (!msg) return;
+
+    msg.dislikes++;
+    io.emit("updateMessage", msg);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 });
 
-app.post("/messages", (req, res) => {
-  const { text, username } = req.body;
-
-  if (!text || !text.trim()) {
-    return res.status(400).json({ error: "Message text is required" });
-  }
-
-  if (!username || !username.trim()) {
-    return res.status(400).json({ error: "Username is required" });
-  }
-
-  const newMessage = {
-    id: Date.now(),
-    text: text.trim(),
-    username: username.trim(),
-    timestamp: Date.now(),
-    likes: 0,
-    dislikes: 0,
-  };
-
-  messages.push(newMessage);
-
-  res.status(201).json(newMessage);
-});
-
-app.post("/messages/:id/like", (req, res) => {
-  const message = messages.find((m) => m.id === parseInt(req.params.id));
-
-  if (!message) {
-    return res.status(404).json({ error: "Message not found" });
-  }
-
-  message.likes++;
-  res.json(message);
-});
-
-app.post("/messages/:id/dislike", (req, res) => {
-  const message = messages.find((m) => m.id === parseInt(req.params.id));
-
-  if (!message) {
-    return res.status(404).json({ error: "Message not found" });
-  }
-
-  message.dislikes++;
-  res.json(message);
-});
-
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
