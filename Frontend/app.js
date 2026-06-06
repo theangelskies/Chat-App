@@ -1,4 +1,4 @@
-const socket = io("http://localhost:3000");
+const socket = io("http://kp901psj92ekjjo75k5aruls.178.105.39.91.sslip.io");
 
 const messagesDiv = document.getElementById("messages");
 
