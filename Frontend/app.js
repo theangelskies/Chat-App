@@ -1,8 +1,9 @@
-const socket = io("http://kp901psj92ekjjo75k5aruls.178.105.39.91.sslip.io");
+const socket = io("http://qf8xmf8qj273dw9dryowrbtn.178.105.39.91.sslip.io");
 
 const messagesDiv = document.getElementById("messages");
 
 socket.on("init", (messages) => {
+  console.log("init");
   messagesDiv.innerHTML = "";
   messages.forEach(renderMessage);
 });
@@ -20,6 +21,7 @@ socket.on("updateMessage", (msg) => {
 });
 
 function sendMessage() {
+  console.log("senMessage");
   const text = document.getElementById("messageInput").value.trim();
   const username = document.getElementById("username").value.trim();
 
