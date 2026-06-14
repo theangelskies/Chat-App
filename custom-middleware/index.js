@@ -3,39 +3,39 @@ import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
+import { logger } from "./middlewares/logger.js";
+import { validateMessage } from "./middlewares/validateMessage.js";
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const server = createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
-});
+const io = new Server(server, { cors: { origin: "*" } });
 
 let messages = [];
 
-io.on("connection", (socket) => {
-  console.log("User connected");
+// Use custom logger middleware
+io.use(logger);
 
+io.on("connection", (socket) => {
   socket.emit("init", messages);
 
-  socket.on("sendMessage", ({ text, username }) => {
-    if (!text?.trim() || !username?.trim()) return;
+  socket.on("sendMessage", (data) => {
+    // Use validation middleware manually
+    validateMessage(data, () => {
+      const msg = {
+        id: Date.now(),
+        text: data.text.trim(),
+        username: data.username.trim(),
+        timestamp: Date.now(),
+        likes: 0,
+        dislikes: 0,
+      };
 
-    const msg = {
-      id: Date.now(),
-      text: text.trim(),
-      username: username.trim(),
-      timestamp: Date.now(),
-      likes: 0,
-      dislikes: 0,
-    };
-
-    messages.push(msg);
-    io.emit("newMessage", msg);
+      messages.push(msg);
+      io.emit("newMessage", msg);
+    });
   });
 
   socket.on("like", (id) => {
@@ -53,12 +53,6 @@ io.on("connection", (socket) => {
     msg.dislikes++;
     io.emit("updateMessage", msg);
   });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected");
-  });
 });
 
-server.listen(process.env.PORT || 3000, () => {
-  console.log("Server running");
-});
+server.listen(3001, () => console.log("Custom middleware server running"));
